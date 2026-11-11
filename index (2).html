@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ريتيل فلو</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛒</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f2f5f2;--sf:#fff;--tx:#14231b;--mu:#5d6f64;--bd:#dde5df;--g:#1f9d55;--gd:#0f2a1e;--rd:#d64545;--or:#e8912d;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0c1511;--sf:#15221b;--tx:#e8f0ea;--mu:#8fa397;--bd:#25362c;--gd:#08130d;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0c1511;--sf:#15221b;--tx:#e8f0ea;--mu:#8fa397;--bd:#25362c;--gd:#08130d;color-scheme:dark}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:var(--bg);color:var(--tx);font-family:Cairo,Tahoma,sans-serif;font-size:15px;min-height:100vh}
+.app{display:grid;grid-template-columns:200px 1fr;min-height:100vh}
+nav{background:var(--gd);color:#cfe3d6;padding:16px 10px;position:sticky;top:0;height:100vh}
+nav h1{margin:0 8px 18px;font-size:20px;color:#fff}nav h1 b{color:#3ddc84}
+nav button{display:flex;gap:10px;width:100%;background:none;border:0;color:inherit;font:inherit;padding:11px 12px;border-radius:8px;cursor:pointer;text-align:right}
+nav button.on{background:var(--g);color:#fff}
+main{padding:18px;min-width:0}
+h2{margin:0 0 14px;font-size:20px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:14px}
+.card small{color:var(--mu)}.card .n{font-size:22px;font-weight:800;margin-top:4px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.bars{display:flex;align-items:flex-end;gap:8px;height:140px;margin-top:10px}
+.bars div{flex:1;text-align:center;font-size:11px;color:var(--mu);display:flex;flex-direction:column;justify-content:flex-end;height:100%}
+.bars i{display:block;background:var(--g);border-radius:4px 4px 0 0;min-height:2px}
+table{width:100%;border-collapse:collapse}th,td{padding:9px 6px;border-bottom:1px solid var(--bd);text-align:right}th{color:var(--mu);font-weight:600;font-size:13px}
+.tw{overflow-x:auto}
+input,select{font:inherit;background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:9px;width:100%}
+.btn{font:inherit;background:var(--g);color:#fff;border:0;border-radius:8px;padding:9px 14px;cursor:pointer;font-weight:600}
+.btn.alt{background:var(--bg);color:var(--tx);border:1px solid var(--bd)}.btn.red{background:var(--rd)}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:14px;align-items:end}
+.pos{display:grid;grid-template-columns:1fr 340px;gap:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-top:10px}
+.p{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:10px;cursor:pointer;text-align:right;font:inherit;color:inherit}
+.p:hover{border-color:var(--g)}.p b{display:block}.p span{color:var(--mu);font-size:12px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:7px 0;border-bottom:1px solid var(--bd)}
+.q button{width:26px;height:26px;border-radius:6px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);cursor:pointer}
+.tot{font-size:22px;font-weight:800;color:var(--g)}
+.low{color:var(--rd);font-weight:600}
+#toast{position:fixed;bottom:84px;left:50%;transform:translateX(-50%);background:var(--gd);color:#fff;padding:10px 18px;border-radius:20px;display:none;z-index:9}
+@media(max-width:800px){
+.app{display:block}
+nav{position:fixed;bottom:0;left:0;right:0;top:auto;height:auto;display:flex;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));z-index:5}
+nav h1{display:none}nav button{flex-direction:column;align-items:center;gap:0;font-size:12px;padding:6px 2px}
+main{padding:14px 12px 90px}.pos,.two{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<nav id="nav"></nav>
+<main id="main"></main>
+</div>
+<div id="toast"></div>
+<script>
+/* طبقة التخزين: حاليًا على الجهاز. لاحقًا نستبدلها بـ Firebase Firestore دون تغيير باقي الكود. */
+const KEY='retailflow_v1';
+const DB={
+  load(){try{return JSON.parse(localStorage.getItem(KEY))}catch(e){return null}},
+  save(s){try{localStorage.setItem(KEY,JSON.stringify(s))}catch(e){}}
+};
+let S=DB.load()||{
+  products:[
+    {id:1,name:'أرز مصري 1 كجم',code:'1001',price:38,cost:30,stock:120},
+    {id:2,name:'زيت عباد الشمس 1 لتر',code:'1002',price:85,cost:70,stock:60},
+    {id:3,name:'سكر 1 كجم',code:'1003',price:32,cost:26,stock:8},
+    {id:4,name:'شاي 250 جم',code:'1004',price:55,cost:44,stock:40}
+  ],
+  customers:[{id:1,name:'عميل نقدي',phone:''}],
+  sales:[]
+};
+const save=()=>DB.save(S);
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=n=>Number(n||0).toLocaleString('ar-EG',{maximumFractionDigits:2});
+const nid=a=>a.reduce((m,x)=>Math.max(m,x.id),0)+1;
+function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',2200)}
+
+const TABS=[['dash','🏠','الرئيسية'],['pos','🧾','نقاط البيع'],['prod','📦','المخزون'],['cust','👥','العملاء'],['rep','📊','التقارير']];
+let tab='dash',cart=[];
+function go(t){tab=t;$('nav').innerHTML='<h1>Retail<b>Flow</b></h1>'+TABS.map(x=>`<button class="${x[0]==t?'on':''}" onclick="go('${x[0]}')"><span>${x[1]}</span><span>${x[2]}</span></button>`).join('');({dash,pos,prod,cust,rep})[t]()}
+
+function dash(){
+  const today=new Date().toDateString();
+  const ts=S.sales.filter(s=>new Date(s.date).toDateString()==today);
+  const sum=(a,k)=>a.reduce((m,x)=>m+x[k],0);
+  const low=S.products.filter(p=>p.stock<=10);
+  const days=[...Array(7)].map((_,i)=>{const d=new Date();d.setDate(d.getDate()-6+i);const v=sum(S.sales.filter(s=>new Date(s.date).toDateString()==d.toDateString()),'total');return{l:d.toLocaleDateString('ar-EG',{weekday:'short'}),v}});
+  const mx=Math.max(1,...days.map(d=>d.v));
+  $('main').innerHTML=`<h2>لوحة التحكم</h2>
+  <div class="cards">
+   <div class="card"><small>مبيعات اليوم</small><div class="n">${fmt(sum(ts,'total'))}</div></div>
+   <div class="card"><small>أرباح اليوم</small><div class="n">${fmt(sum(ts,'profit'))}</div></div>
+   <div class="card"><small>فواتير اليوم</small><div class="n">${fmt(ts.length)}</div></div>
+   <div class="card"><small>أصناف</small><div class="n">${fmt(S.products.length)}</div></div>
+  </div>
+  <div class="two">
+   <div class="card"><b>مبيعات آخر ٧ أيام</b><div class="bars">${days.map(d=>`<div title="${fmt(d.v)}"><i style="height:${d.v/mx*100}%"></i>${d.l}</div>`).join('')}</div></div>
+   <div class="card"><b>تنبيهات المخزون</b>${low.length?low.map(p=>`<div class="row"><span>${esc(p.name)}</span><span class="low">${fmt(p.stock)}</span></div>`).join(''):'<p style="color:var(--mu)">كل الأصناف متوفرة.</p>'}</div>
+  </div>`;
+}
+
+function pos(){
+  $('main').innerHTML=`<h2>نقاط البيع</h2><div class="pos">
+  <div><input id="q" placeholder="ابحث بالاسم أو امسح الباركود" oninput="grid()" onkeydown="if(event.key=='Enter')scan()"><div class="grid" id="pg"></div></div>
+  <div class="card"><b>الفاتورة</b><div id="cart"></div>
+   <div class="form" style="margin-top:10px"><select id="cu">${S.customers.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select><input id="ds" type="number" min="0" placeholder="خصم" oninput="cartUI()"></div>
+   <div class="row"><span>الإجمالي</span><span class="tot" id="tt">٠</span></div>
+   <button class="btn" style="width:100%;margin-top:10px" onclick="pay()">إتمام البيع</button></div></div>`;
+  grid();cartUI();
+}
+function grid(){
+  const q=($('q').value||'').trim();
+  const l=S.products.filter(p=>!q||p.name.includes(q)||p.code.includes(q));
+  $('pg').innerHTML=l.length?l.map(p=>`<button class="p" onclick="add(${p.id})"><b>${esc(p.name)}</b><span>${fmt(p.price)} · المتاح ${fmt(p.stock)}</span></button>`).join(''):'<p style="color:var(--mu)">لا توجد أصناف مطابقة.</p>';
+}
+function scan(){const q=$('q').value.trim();const p=S.products.find(p=>p.code==q);if(p){add(p.id);$('q').value='';grid()}}
+function add(id){const p=S.products.find(x=>x.id==id);const c=cart.find(x=>x.id==id);if(c){if(c.qty<p.stock)c.qty++;else toast('الكمية المتاحة انتهت')}else if(p.stock>0)cart.push({id,qty:1});else toast('الصنف غير متوفر');cartUI()}
+function qty(id,d){const c=cart.find(x=>x.id==id);const p=S.products.find(x=>x.id==id);c.qty+=d;if(c.qty>p.stock)c.qty=p.stock;if(c.qty<=0)cart=cart.filter(x=>x.id!=id);cartUI()}
+function total(){const s=cart.reduce((m,c)=>m+c.qty*S.products.find(p=>p.id==c.id).price,0);return Math.max(0,s-Number($('ds')?.value||0))}
+function cartUI(){
+  $('cart').innerHTML=cart.length?cart.map(c=>{const p=S.products.find(x=>x.id==c.id);return `<div class="row"><span>${esc(p.name)}</span><span class="q"><button onclick="qty(${c.id},-1)">−</button> ${fmt(c.qty)} <button onclick="qty(${c.id},1)">+</button></span><span>${fmt(c.qty*p.price)}</span></div>`}).join(''):'<p style="color:var(--mu)">اضغط على صنف لإضافته.</p>';
+  $('tt').textContent=fmt(total());
+}
+function pay(){
+  if(!cart.length)return toast('الفاتورة فارغة');
+  const items=cart.map(c=>{const p=S.products.find(x=>x.id==c.id);return{id:p.id,name:p.name,qty:c.qty,price:p.price,cost:p.cost}});
+  const ds=Number($('ds').value||0),gross=items.reduce((m,i)=>m+i.qty*i.price,0),cost=items.reduce((m,i)=>m+i.qty*i.cost,0),tot=Math.max(0,gross-ds);
+  S.sales.push({id:nid(S.sales),date:Date.now(),items,discount:ds,total:tot,profit:tot-cost,cust:Number($('cu').value)});
+  items.forEach(i=>{S.products.find(p=>p.id==i.id).stock-=i.qty});
+  cart=[];save();toast('تم حفظ الفاتورة');pos();
+}
+
+function prod(){
+  $('main').innerHTML=`<h2>المخزون</h2>
+  <div class="form"><input id="pn" placeholder="اسم الصنف"><input id="pc" placeholder="الباركود"><input id="pp" type="number" placeholder="سعر البيع"><input id="pk" type="number" placeholder="التكلفة"><input id="ps" type="number" placeholder="الكمية"><button class="btn" onclick="addP()">إضافة صنف</button></div>
+  <div class="card tw"><table><tr><th>الصنف</th><th>الباركود</th><th>السعر</th><th>التكلفة</th><th>الكمية</th><th></th></tr>
+  ${S.products.map(p=>`<tr><td>${esc(p.name)}</td><td>${esc(p.code)}</td><td>${fmt(p.price)}</td><td>${fmt(p.cost)}</td><td class="${p.stock<=10?'low':''}">${fmt(p.stock)}</td><td><button class="btn alt" onclick="stk(${p.id})">توريد</button> <button class="btn red" onclick="delP(${p.id})">حذف</button></td></tr>`).join('')}</table></div>`;
+}
+function addP(){const n=$('pn').value.trim();if(!n||!$('pp').value)return toast('اكتب الاسم وسعر البيع');S.products.push({id:nid(S.products),name:n,code:$('pc').value.trim(),price:+$('pp').value,cost:+$('pk').value||0,stock:+$('ps').value||0});save();prod()}
+function stk(id){const v=Number(prompt('الكمية الموردة:'));if(v>0){S.products.find(p=>p.id==id).stock+=v;save();prod()}}
+function delP(id){if(confirm('حذف الصنف؟')){S.products=S.products.filter(p=>p.id!=id);save();prod()}}
+
+function cust(){
+  const spent=id=>S.sales.filter(s=>s.cust==id).reduce((m,s)=>m+s.total,0);
+  $('main').innerHTML=`<h2>العملاء</h2>
+  <div class="form"><input id="cn" placeholder="اسم العميل"><input id="cp" placeholder="رقم الهاتف"><button class="btn" onclick="addC()">إضافة عميل</button></div>
+  <div class="card tw"><table><tr><th>الاسم</th><th>الهاتف</th><th>إجمالي المشتريات</th></tr>${S.customers.map(c=>`<tr><td>${esc(c.name)}</td><td>${esc(c.phone)}</td><td>${fmt(spent(c.id))}</td></tr>`).join('')}</table></div>`;
+}
+function addC(){const n=$('cn').value.trim();if(!n)return toast('اكتب اسم العميل');S.customers.push({id:nid(S.customers),name:n,phone:$('cp').value.trim()});save();cust()}
+
+function rep(){
+  const r=[...S.sales].reverse();
+  $('main').innerHTML=`<h2>التقارير</h2>
+  <div style="display:flex;gap:8px;margin-bottom:12px"><button class="btn alt" onclick="exp()">تصدير نسخة احتياطية</button></div>
+  <div class="card tw"><table><tr><th>رقم</th><th>التاريخ</th><th>العميل</th><th>الإجمالي</th><th>الربح</th></tr>
+  ${r.length?r.map(s=>`<tr><td>${fmt(s.id)}</td><td>${new Date(s.date).toLocaleString('ar-EG')}</td><td>${esc((S.customers.find(c=>c.id==s.cust)||{}).name||'')}</td><td>${fmt(s.total)}</td><td>${fmt(s.profit)}</td></tr>`).join(''):'<tr><td colspan="5" style="color:var(--mu)">لا توجد مبيعات بعد.</td></tr>'}</table></div>`;
+}
+function exp(){const a=document.createElement('a');a.href='data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(S));a.download='retailflow-backup.json';a.click()}
+go('dash');
+</script>
+</body>
+</html>
